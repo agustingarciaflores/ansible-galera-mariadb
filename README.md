@@ -1,4 +1,4 @@
-Role Name
+Ansible MariaDB Galera cluster
 =========
 
 Install and configure a MariaDB galera cluster with Ansible.
