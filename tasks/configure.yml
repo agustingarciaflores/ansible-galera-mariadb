@@ -1,0 +1,90 @@
+
+- name: Check if root user have been configured before
+  stat:
+    path: "/etc/mysql_root_configured"
+  register: root_configured
+
+- name: configure_root_access | updating root passwords
+  mysql_user:
+    name: "{{ mariadb_root_username }}"
+    host: "{{ item }}"
+    password: "{{ mariadb_root_password }}"
+  with_items:
+    - '{{ ansible_hostname }}'
+    - '127.0.0.1'
+    - '::1'
+    - localhost
+  notify: root configured
+  when: not root_configured.stat.exists
+
+
+- name: configure_root_access | updating root passwords
+  mysql_user:
+    name: "{{ mariadb_root_username }}"
+    host: "{{ item }}"
+    password: "{{ mariadb_root_password }}"
+    login_user: "{{ mariadb_root_username }}"
+    login_password: "{{ mariadb_root_password }}"
+  with_items:
+    - '{{ ansible_hostname }}'
+    - '127.0.0.1'
+    - '::1'
+    - localhost
+  when: root_configured.stat.exists
+
+- name: Remove anonymous users
+  mysql_user:
+    user: ""
+    host: "{{ item }}"
+    state: absent
+    login_user: "{{ mariadb_root_username }}"
+    login_password: "{{ mariadb_root_password }}"
+  with_items:
+    - '{{ ansible_hostname }}'
+    - '127.0.0.1'
+    - '::1'
+    - localhost
+
+- name: Remove test database
+  mysql_db:
+    db: test
+    state: absent
+    login_user: "{{ mariadb_root_username }}"
+    login_password: "{{ mariadb_root_password }}"
+
+- name: Copy my.cnf config file
+  template:
+    src: "my.cnf.j2"
+    dest: "/etc/mysql/mariadb.cnf"
+
+- name: Copy galera config file
+  template:
+    src: "galera-db-01.j2"
+    dest: "/etc/mysql/mariadb.conf.d/galera.cnf"
+
+- name: Check if cluster have been created
+  stat:
+    path: "/etc/cluster_created"
+  register: cluster_created
+
+- name: Check if this is the master host
+  stat:
+    path: "/etc/master_hostname"
+  register: master
+
+- name: Stop mariadb service in preparation for cluster creation
+  systemd:
+    name: mariadb
+    state: stopped
+  when: not cluster_created.stat.exists
+
+- name: Bootstrap Galera cluster
+  command: galera_new_cluster
+  run_once: true
+  notify: cluster created
+  when: not cluster_created.stat.exists
+
+- name: start mariadb
+  systemd:
+    name: mariadb
+    state: started

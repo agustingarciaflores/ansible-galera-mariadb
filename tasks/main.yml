@@ -1,0 +1,8 @@
+---
+# tasks file for galera-mariadb
+
+- name: Install MariaDB
+  include_tasks: install.yml
+
+- name: Configure Galera cluster
+  include_tasks: configure.yml

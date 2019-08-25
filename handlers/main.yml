@@ -1,0 +1,11 @@
+---
+# handlers file for galera-mariadb
+- name: root configured
+  file:
+    path: "/etc/mysql_root_configured"
+    state: touch
+
+- name: cluster created
+  file:
+    path: "/etc/cluster_created"
+    state: touch

@@ -1,0 +1,24 @@
+
+- name: Install software properties common
+  apt:
+    name: "software-properties-common"
+    state: present
+
+- name: Import GPG key
+  apt_key:
+    keyserver: hkp://keyserver.ubuntu.com:80
+    id: "0xF1656F24C74CD1D8"
+
+- name: Add MariaDB repository
+  apt_repository:
+    repo: 'deb [arch=amd64] http://mirror.zol.co.zw/mariadb/repo/10.3/ubuntu bionic main'
+    state: present
+
+- name: Install MariaDB
+  apt:
+    name: "{{ packages }}"
+  vars:
+    packages:
+      - mariadb-server
+      - mariadb-client
+      - python3-mysqldb
